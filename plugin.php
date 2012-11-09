@@ -46,6 +46,7 @@ function authmgr_environment_check() {
 	if ( !isset( $authmgr_anon_capabilities) ) {
 		$authmgr_anon_capabilities = array(
 			AuthmgrCapability::API,
+			AuthmgrCapability::ShowAdmin,//TODO: hack! how to allow logon page?
 		);
 	}
 
@@ -119,7 +120,7 @@ function authmgr_intercept_admin() {
 	if ( authmgr_have_capability( AuthmgrCapability::FullAdmin ) )
 		return;
 
-        authmgr_require_capability( AuthmgrCapability::ShowAdmin );
+	authmgr_require_capability( AuthmgrCapability::ShowAdmin );
 
         $action_capability_map = array(
       		'add' => AuthmgrCapability::AddURL,
@@ -130,9 +131,8 @@ function authmgr_intercept_admin() {
         	'deactivate' => AuthmgrCapability::ManagePlugins,
 	);
 
-
 	// intercept requests for plugin management
-	if ( isset( $_GET['plugin'] ) ) {
+	if ( isset( $_REQUEST['plugin'] ) ) {
                 $action_keyword = $_REQUEST['action'];
                 $cap_needed = $action_capability_map[$action_keyword];
                 if ( $cap_needed !== NULL && authmgr_have_capability( $cap_needed ) !== true) {
@@ -273,11 +273,7 @@ function authmgr_check_user_capability( $original, $capability ) {
 	if ( $authenticated !== true )
 		return false;
 
-	$user_roles = authmgr_get_roles_for_user( YOURLS_USER );
-	$user_capabilities = array();
-	foreach ($authmgr_role_capabilities as $rolename => $rolecaps) {
-		$user_capabilities = $user_capabilities + $rolecaps;
-	}
+	$user_capabilities = authmgr_get_caps_for_user( YOURLS_USER );
 	// resist the urge to remove duplicates. that operation is O(n^2)
 	// but enumerating the list and comparing each item is O(n).
 	return in_array( $capability, $user_capabilities );
