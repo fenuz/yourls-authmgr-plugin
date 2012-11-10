@@ -357,10 +357,8 @@ function authmgr_html_append_roles( $original ) {
 	// the core function is fixed.
         $authenticated = yourls_apply_filter( 'is_valid_user', yourls_is_valid_user() );
         if ( $authenticated === true ) {
-		$listroles = implode(', ', authmgr_get_roles_for_user( YOURLS_USER ));
 		$listcaps = implode(', ', authmgr_get_caps_for_user( YOURLS_USER ));
-		$append = '<div class="authmgr-roles" title="'.$listcaps.'">'.$listroles.'</div>';
-		return $original . $append;
+		return '<div title="'.$listcaps.'">'.$original.'</div>';
 	} else {
 		return $original;
 	}
