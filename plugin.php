@@ -68,9 +68,7 @@ function authmgr_environment_check() {
 	}
 
 	if ( !isset( $authmgr_role_assignment ) ) {
-		$authmgr_role_assignment = array(
-			AuthmgrRoles::Administrator => array( YOURLS_USER ),
-		);
+		$authmgr_role_assignment = array();
 	}
 
 	// convert role assignment table to lower case if it hasn't been done already
@@ -149,6 +147,10 @@ function authmgr_require_capability( $capability ) {
 	}
 }
 
+/*
+ * Is the requested capability permitted in this context?
+ * (By filtering AUTHMGR_ALLOW, you can grant capabilities without using roles.)
+ */
 function authmgr_have_capability( $capability ) {
         return yourls_apply_filter( AUTHMGR_ALLOW, false, $capability);
 }
@@ -158,6 +160,7 @@ function authmgr_have_capability( $capability ) {
  * Determine whether a specific user has a role.
  * If you want to grant roles from a plugin, just handle this filter.
  * Any filter handlers should execute as quickly as possible.
+ * (By filtering AUTHMGR_HASROLE, you can connect internal roles to something else.)
  */
 function authmgr_user_has_role( $username, $rolename ) {
 	// cache responses to improve execution time
@@ -204,6 +207,7 @@ function authmgr_get_caps_for_user( $username ) {
 			$user_caps = array_merge( $user_caps, $rolecaps );
 		}
 	}
+	$user_caps = array_unique( $user_caps );
 
 	return $user_caps;
 }
@@ -277,6 +281,11 @@ function authmgr_check_apiuser_capability( $original, $capability ) {
 yourls_add_filter( AUTHMGR_HASROLE, 'authmgr_user_has_role_in_config');
 function authmgr_user_has_role_in_config( $original, $username, $rolename ) {
 	global $authmgr_role_assignment;
+
+	// if no role assignments are created, grant everything
+	// this is a failsafe in case configuration was done wrong
+	if ( empty( $authmgr_role_assignment ) )
+		return true;
 
 	// do this the case-insensitive way
 	// the entire array was made lowercase in environment check
