@@ -75,6 +75,12 @@ function authmgr_environment_check() {
 		$authmgr_role_assignment = array();
 	}
 
+	if ( !isset( $authmgr_iprange_roles ) ) {
+		$authmgr_admin_ipranges = array(
+			'127.0.0.0/8',
+		);
+	}
+
 	// convert role assignment table to lower case if it hasn't been done already
 	// this makes searches much easier!
 	$authmgr_role_assignment_lower = array();
@@ -120,7 +126,7 @@ function authmgr_intercept_admin() {
                 $action_keyword = $_REQUEST['action'];
                 $cap_needed = $action_capability_map[$action_keyword];
                 if ( $cap_needed !== NULL && authmgr_have_capability( $cap_needed ) !== true) {
-                        yourls_redirect( yourls_admin_url( 'plugins.php?access=denied' ), 302 );
+                        yourls_redirect( yourls_admin_url( '?access=denied' ), 302 );
                 }
 	}
 
@@ -150,7 +156,7 @@ function authmgr_require_capability( $capability ) {
 	if ( !authmgr_have_capability( $capability ) ) {
 		// TODO: display a much nicer error page
 		//die('Sorry, you are not authorized for the action: '.$capability);
-                yourls_redirect( yourls_admin_url( 'plugins.php?access=denied' ), 302 );
+                yourls_redirect( yourls_admin_url( '?access=denied' ), 302 );
 		die();
 	}
 }
@@ -207,17 +213,17 @@ function authmgr_get_roles_for_user( $username ) {
  * What capabilities does a particular user have?
  */
 function authmgr_get_caps_for_user( $username ) {
-	global $authmgr_role_capabilities;
-	$user_caps = array();
+        global $authmgr_role_capabilities;
+        $user_caps = array();
 
-	foreach ( $authmgr_role_capabilities as $rolename => $rolecaps ) {
-		if ( authmgr_user_has_role( $username, $rolename ) ) {
-			$user_caps = array_merge( $user_caps, $rolecaps );
-		}
-	}
-	$user_caps = array_unique( $user_caps );
+        foreach ( $authmgr_role_capabilities as $rolename => $rolecaps ) {
+                if ( authmgr_user_has_role( $username, $rolename ) ) {
+                        $user_caps = array_merge( $user_caps, $rolecaps );
+                }
+        }
+        $user_caps = array_unique( $user_caps );
 
-	return $user_caps;
+        return $user_caps;
 }
 
 /***************** FILTER DEFINITIONS **************/
@@ -260,9 +266,44 @@ function authmgr_check_user_capability( $original, $capability ) {
 		return false;
 
 	$user_capabilities = authmgr_get_caps_for_user( YOURLS_USER );
-	// resist the urge to remove duplicates. that operation is O(n^2)
-	// but enumerating the list and comparing each item is O(n).
 	return in_array( $capability, $user_capabilities );
+}
+
+/*
+ * Is the user connecting from an IP range that gives automatic admin?
+ * If the user is connecting from an IP range designated for admins, then
+ * automatically grant all capabilities. 
+ */
+yourls_add_filter( AUTHMGR_ALLOW, 'authmgr_check_admin_ipranges', 15 );
+function authmgr_check_admin_ipranges( $original, $capability ) {
+	global $authmgr_admin_ipranges;
+
+        // Shortcut - trust approval given by earlier filters
+        if ( $original === true ) return true;
+
+        // ensure $authmgr_admin_ipranges is setup
+        authmgr_environment_check();
+
+	foreach ($authmgr_admin_ipranges as $range) {
+		if ( authmgr_cidr_match( $_SERVER['REMOTE_ADDR'], $range ) )
+			return true;
+	}
+
+	return $original; // effectively returns false
+}
+
+/*
+ * Borrowed from:
+ * http://stackoverflow.com/questions/594112/matching-an-ip-to-a-cidr-mask-in-php5
+ */
+function authmgr_cidr_match($ip, $range)
+{
+    list ($subnet, $bits) = split('/', $range);
+    $ip = ip2long($ip);
+    $subnet = ip2long($subnet);
+    $mask = -1 << (32 - $bits);
+    $subnet &= $mask; # nb: in case the supplied subnet wasn't correctly aligned
+    return ($ip & $mask) == $subnet;
 }
 
 /*
