@@ -30,6 +30,7 @@ class AuthmgrCapability {
 	const EditURL = 'EditURL';
 	const ManagePlugins = 'ManagePlugins';
         const API = 'API';
+	const ViewStats = 'ViewStats';
 }	
 
 function authmgr_environment_check() {
@@ -53,16 +54,19 @@ function authmgr_environment_check() {
 				AuthmgrCapability::EditURL,
 				AuthmgrCapability::ManagePlugins,
 				AuthmgrCapability::API,
+                                AuthmgrCapability::ViewStats,
 			),
 			AuthmgrRoles::Editor => array(
 				AuthmgrCapability::ShowAdmin,
 				AuthmgrCapability::AddURL,
 				AuthmgrCapability::EditURL,
 				AuthmgrCapability::DeleteURL,
+                                AuthmgrCapability::ViewStats,
 			),
 			AuthmgrRoles::Contributor => array(
 				AuthmgrCapability::ShowAdmin,
 				AuthmgrCapability::AddURL,
+				AuthmgrCapability::ViewStats,
 			),
 		);
 	}
@@ -87,12 +91,20 @@ function authmgr_environment_check() {
 
 /********** Inject authorization checks into CORE functionality ********/
 
+yourls_add_action( 'load_template_infos', 'authmgr_intercept_stats' );
+function authmgr_intercept_stats() { authmgr_require_capability( AuthmgrCapability::ViewStats ); }
+
 yourls_add_action( 'api', 'authmgr_intercept_api' );
 function authmgr_intercept_api() { authmgr_require_capability( AuthmgrCapability::API ); }
 
 yourls_add_action( 'admin_init', 'authmgr_intercept_admin' );
 function authmgr_intercept_admin() {
 	authmgr_require_capability( AuthmgrCapability::ShowAdmin );
+
+        // we use this GET param to send up a feedback notice to user
+        if ( isset( $_GET['access'] ) && $_GET['access']=='denied' ) {
+                yourls_add_notice('Access Denied');
+        }
 
         $action_capability_map = array(
       		'add' => AuthmgrCapability::AddURL,
@@ -111,12 +123,6 @@ function authmgr_intercept_admin() {
                         yourls_redirect( yourls_admin_url( 'plugins.php?access=denied' ), 302 );
                 }
 	}
-
-	// we use this GET param to send up a feedback notice to user
-        if ( isset( $_GET['access'] ) && $_GET['access']=='denied' ) {
-	        yourls_add_notice('Access Denied');
-        }
-
 
 	// also intercept AJAX requests
 	if ( yourls_is_Ajax() ) {
@@ -143,7 +149,9 @@ function authmgr_intercept_admin() {
 function authmgr_require_capability( $capability ) {
 	if ( !authmgr_have_capability( $capability ) ) {
 		// TODO: display a much nicer error page
-		die('Sorry, you are not authorized for the action: '.$capability);
+		//die('Sorry, you are not authorized for the action: '.$capability);
+                yourls_redirect( yourls_admin_url( 'plugins.php?access=denied' ), 302 );
+		die();
 	}
 }
 
