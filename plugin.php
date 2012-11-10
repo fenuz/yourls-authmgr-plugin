@@ -8,9 +8,6 @@ Author: nicwaller
 Author URI: http://code.google.com/u/101717938102134699062/
 */
 
-error_reporting(E_ALL);
-ini_set('display_errors','On');
-
 // No direct call
 if( !defined( 'YOURLS_ABSPATH' ) ) die();
 
@@ -18,19 +15,16 @@ if( !defined( 'YOURLS_ABSPATH' ) ) die();
 define( 'AUTHMGR_ALLOW', 'filter_authmgr_allow' );
 define( 'AUTHMGR_HASROLE', 'filter_authmgr_hasrole' );
 
-// Define capabilities used in CORE
-// These are the "resources" part of Role-Based Access Control
+// Define constants used for naming roles (but they don't work in config.php)
 class AuthmgrRoles {
 	const Administrator = 'Administrator';
 	const Editor = 'Editor';
 	const Contributor = 'Contributor';
 }
 
-// these are the "roles" part of Role-Based Access Control
+// Define constants used for naming capabilities
 class AuthmgrCapability {
 	const ShowAdmin = 'ShowAdmin'; // only display admin panel
-	const FullAdmin = 'FullAdmin'; // total read/write to admin panel
-	//const Upgrade = 'Upgrade';
 	const AddURL = 'AddURL';
 	const DeleteURL = 'DeleteURL';
 	const EditURL = 'EditURL';
@@ -53,9 +47,12 @@ function authmgr_environment_check() {
 	if ( !isset( $authmgr_role_capabilities) ) {
 		$authmgr_role_capabilities = array(
 			AuthmgrRoles::Administrator => array(
+				AuthmgrCapability::ShowAdmin,
+				AuthmgrCapability::AddURL,
+				AuthmgrCapability::DeleteURL,
+				AuthmgrCapability::EditURL,
+				AuthmgrCapability::ManagePlugins,
 				AuthmgrCapability::API,
-				AuthmgrCapability::FullAdmin,
-				AuthmgrCapability::ManagePlugins,//this is redundant
 			),
 			AuthmgrRoles::Editor => array(
 				AuthmgrCapability::ShowAdmin,
@@ -72,9 +69,7 @@ function authmgr_environment_check() {
 
 	if ( !isset( $authmgr_role_assignment ) ) {
 		$authmgr_role_assignment = array(
-			AuthmgrRoles::Administrator => array('administrator'),
-			AuthmgrRoles::Editor => array('editor'),
-			AuthmgrRoles::Contributor => array('contributor'),
+			AuthmgrRoles::Administrator => array( YOURLS_USER ),
 		);
 	}
 
@@ -92,24 +87,6 @@ function authmgr_environment_check() {
 	return true;
 }
 
-// hook into core actions so we can abort if user is not permitted
-// it only makes sense to hook core functions that happen after authentication
-
-// actions
-// html_addnew
-// insert_link
-// login
-// post_add_new_link
-// post_yourls_info_stats
-// pre_add_new_link -- sometimes called without authn
-// pre_page -- right before a page is included
-// redirect_shorturl -- shorturl request, right before 301 redirect
-// plugins - there are no hooks to block activation/deactivation
-//  so instead, block the entire plugins page
-
-// delete_link - there is no pre-action or filter that i can hook
-// delete_option
-
 /********** Inject authorization checks into CORE functionality ********/
 
 yourls_add_action( 'api', 'authmgr_intercept_api' );
@@ -117,9 +94,6 @@ function authmgr_intercept_api() { authmgr_require_capability( AuthmgrCapability
 
 yourls_add_action( 'admin_init', 'authmgr_intercept_admin' );
 function authmgr_intercept_admin() {
-	if ( authmgr_have_capability( AuthmgrCapability::FullAdmin ) )
-		return;
-
 	authmgr_require_capability( AuthmgrCapability::ShowAdmin );
 
         $action_capability_map = array(
@@ -299,7 +273,6 @@ function authmgr_check_apiuser_capability( $original, $capability ) {
 
 /*
  * Returns true if user is assigned to specified role in user/config.php
- * TODO: by what variable?
  */
 yourls_add_filter( AUTHMGR_HASROLE, 'authmgr_user_has_role_in_config');
 function authmgr_user_has_role_in_config( $original, $username, $rolename ) {
