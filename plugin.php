@@ -89,9 +89,7 @@ function authmgr_intercept_admin() {
 
 yourls_add_filter( 'logout_link', 'authmgr_html_append_roles' );
 function authmgr_html_append_roles( $original ) {
-	// TODO: another place to get rid of this extra filter call, once
-	// the core function is fixed.
-        $authenticated = yourls_apply_filter( 'is_valid_user', yourls_is_valid_user() );
+        $authenticated = yourls_is_valid_user();
         if ( $authenticated === true ) {
 		$listcaps = implode(', ', authmgr_enumerate_current_capabilities());
 		return '<div title="'.$listcaps.'">'.$original.'</div>';
@@ -186,9 +184,7 @@ function authmgr_check_user_capability( $original, $capability ) {
 	authmgr_environment_check();
 
 	// If the user is not authenticated, then give up because only users have roles.
-	// TODO: call is_valid_user directly once the filtering code is moved
-	// into the core function, so we don't have to. Core Issue 1229
-	$authenticated = yourls_apply_filter( 'is_valid_user', yourls_is_valid_user() );
+	$authenticated = yourls_is_valid_user();
 	if ( $authenticated !== true )
 		return false;
 
