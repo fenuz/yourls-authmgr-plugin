@@ -62,6 +62,12 @@ function authmgr_intercept_admin() {
         	'deactivate' => AuthmgrCapability::ManagePlugins,
 	);
 
+	// Allow other plugins to modify the action_capability_map, they can use 
+	// this to add capabilities for additional Ajax requests. 
+	// Plugins that add new Ajax requests need to do this if they wan't them to 
+	// work in combination with the Authmgr plugin.
+	$action_capability_map = yourls_apply_filter('authmgr_action_capability_map_filter', $action_capability_map);
+
 	// intercept requests for plugin management
 	if ( isset( $_REQUEST['plugin'] ) ) {
                 $action_keyword = $_REQUEST['action'];
@@ -294,6 +300,8 @@ function authmgr_environment_check() {
 			AuthmgrCapability::API,
 			AuthmgrCapability::ShowAdmin,//TODO: hack! how to allow logon page?
 		);
+		// Allow plugins to change the capabilities of Anonymous users.
+		$authmgr_anon_capabilities = yourls_apply_filter('authmgr_anon_capabilities_filter', $authmgr_anon_capabilities);
 	}
 
 	if ( !isset( $authmgr_role_capabilities) ) {
@@ -320,6 +328,8 @@ function authmgr_environment_check() {
 				AuthmgrCapability::ViewStats,
 			),
 		);
+		// Allow plugins to change the capabilities of the roles.
+		$authmgr_role_capabilities = yourls_apply_filter('authmgr_role_capabilities_filter', $authmgr_role_capabilities);
 	}
 
 	if ( !isset( $authmgr_role_assignment ) ) {
