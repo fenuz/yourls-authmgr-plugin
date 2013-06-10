@@ -1,0 +1,15 @@
+{
+    "name": "kennisnet/yourls-authmgr-plugin",
+    "type": "yourls-plugin",
+    "description": "Fork of the yourls-authmgr-plugin on https://github.com/nicwaller/yourls-authmgr-plugin by nicwaller",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Frank Matheron",
+            "email": "frankmatheron@gmail.com"
+        }
+    ],
+    "require": {
+
+    }
+}
