@@ -20,6 +20,7 @@ define( 'AUTHMGR_HASROLE', 'filter_authmgr_hasrole' );
 // Define constants used for naming roles (but they don't work in config.php)
 class AuthmgrRoles {
 	const Administrator = 'Administrator';
+	const ShortAdministrator = "ShortAdministrator";
 	const Editor = 'Editor';
 	const Contributor = 'Contributor';
 }
@@ -313,14 +314,22 @@ function authmgr_environment_check() {
 				AuthmgrCapability::EditURL,
 				AuthmgrCapability::ManagePlugins,
 				AuthmgrCapability::API,
-                                AuthmgrCapability::ViewStats,
+                AuthmgrCapability::ViewStats,
+			),
+			AuthmgrRoles::ShortAdministrator => array(
+				AuthmgrCapability::ShowAdmin,
+				AuthmgrCapability::AddURL,
+				AuthmgrCapability::DeleteURL,
+				AuthmgrCapability::EditURL,
+				AuthmgrCapability::API,
+                AuthmgrCapability::ViewStats,
 			),
 			AuthmgrRoles::Editor => array(
 				AuthmgrCapability::ShowAdmin,
 				AuthmgrCapability::AddURL,
 				AuthmgrCapability::EditURL,
 				AuthmgrCapability::DeleteURL,
-                                AuthmgrCapability::ViewStats,
+                AuthmgrCapability::ViewStats,
 			),
 			AuthmgrRoles::Contributor => array(
 				AuthmgrCapability::ShowAdmin,

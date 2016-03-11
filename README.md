@@ -16,11 +16,12 @@ Default Roles
 ------------------
 The default roles are set up as follows:
 
-Role          | Capabilities
---------------|-------------------------------------------------
-Administrator | No limits
-Editor        | Cannot manage plugins
-Contributor   | Cannot manage plugins, edit URLS, or delete URLs
+Role               | Capabilities
+-------------------|------------------------------------------------------
+Administrator      | No limits
+ShortAdministrator | Cannot manage plugins
+Editor             | Cannot manage plugins
+Contributor        | Cannot manage plugins, edit URLS, or delete URLs
 
 Configuration
 ------------------
@@ -30,6 +31,9 @@ Add role assignments to your user/config.php file.
 $authmgr_role_assignment = array(
   'administrator' => array(
     'your_username',
+  ),
+  'shortadministrator' => array(
+    'your_very_close_friend',
   ),
   'editor' => array(
     'your_close_friend',
